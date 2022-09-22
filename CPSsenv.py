@@ -5,7 +5,7 @@ Authors:
 '''
 
 import networkx as nx
-from numpy.random import random
+from numpy.random import random, seed
 
 class CPSsenv():
 
@@ -19,10 +19,11 @@ class CPSsenv():
         self.Goals = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Goal']
         self.Skills = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Skill']
 
-        self.max_steps = 20
+        self.max_steps = 10
 
 
-    def reset(self, g_state = False):
+    def reset(self, g_state = False, rd_seed = 0):
+        random(rd_seed)
         self.t = 0
 
         # Reseting the environment to the network configuration
@@ -70,7 +71,10 @@ class CPSsenv():
             W = True
 
         cost = self.nw.nodes()[action]['C']
-        _ = ''
+        if W:
+            _ = 'Success'
+        else:
+            _ = 'Fail'
 
         payoff, done = self.update_state(action, W)
         
@@ -111,8 +115,8 @@ class CPSsenv():
                         self.kno[node] = 1
                     elif node_type == 'Goal' and self.goa[node] == 0:
                         payoff += 1
-                    
                         self.goa[node] = 1
+                        done = True
 
                     self.collection.append(node)
 
