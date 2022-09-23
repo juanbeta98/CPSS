@@ -18,7 +18,7 @@ SCADA System example
 '''
 network = nx.DiGraph()
 
-nodes = [('r1', {'type': 'Access', 'D': True}),  ('r2', {'type': 'Access', 'D': False}), ('r3', {'type': 'Access', 'D': False}), 
+nodes = [('r1', {'type': 'Access', 'D': False}),  ('r2', {'type': 'Access', 'D': False}), ('r3', {'type': 'Access', 'D': False}), 
          ('r4', {'type': 'Access', 'D': False}), ('r5', {'type': 'Access', 'D': False}), ('r6', {'type': 'Access', 'D': False}),
          ('r7', {'type': 'Access', 'D': False}), ('r8', {'type': 'Access', 'D': False}),
          
@@ -42,7 +42,9 @@ nodes = [('r1', {'type': 'Access', 'D': True}),  ('r2', {'type': 'Access', 'D': 
 
 for node in nodes:
     if node[1]['type'] == 'Attack step':
-        node[1]['C'] /= 200
+        node[1]['C'] /= 250
+    elif node[1]['type'] == 'Goal':
+        node[1]['R'] *= 2
 
 network.add_nodes_from(nodes)
 
@@ -67,7 +69,7 @@ def translate_state(state):
 '''
 Q-Learning tranining
 '''
-replicas = 10
+replicas = 5
 Replicas = range(replicas)
 
 ### Q-Learning
@@ -86,8 +88,6 @@ episodes_rewards = {}
 succeses = {}
 num_states = []
 
-env = CPSsenv(network)
-
 for replica in Replicas:
     print('Replica:', replica)
 
@@ -96,11 +96,19 @@ for replica in Replicas:
     q_table = {}
 
     for episode in Episodes:
+        env = CPSsenv(network)
+
         # print('Episode:', episode)
+        initial = ['r1', 'r6']
+        node = choice(initial)
+        initial.remove(node)
+        env.nw.nodes()[node]['D'] = True
+        if random() < 0.5:
+            env.nw.nodes()[initial[0]]['D'] = True
 
         for node in ['k'+str(i) for i in range(1,5)]+['s'+str(i) for i in range(1,4)]:
             if random() < 0.5:
-                env.nw.nodes()[node]['Done'] = True
+                env.nw.nodes()[node]['D'] = True
 
         episode_reward = 0
         state, available_actions = env.reset(rd_seed = rd_seed + episode * (1 + replica))
@@ -158,7 +166,7 @@ for replica in Replicas:
 '''
 Mobiled-averaged rewards for plotting 
 '''
-avg_episodes = 500
+avg_episodes = 1000
 average_rewards = []
 average_probs = []
 for episode in Episodes:
@@ -215,11 +223,25 @@ plt.xlabel('Episodes')
 plt.ylabel('Explored states')
 plt.show()
 
+
+
+
+
+
+
 '''
 Q-Learning training
 '''
-for episode in range(Episodes):
+env = CPSsenv(network)
 
+q_table = {}
+episodes_rewards = []
+succeses = []
+alphas = {attack:0 for attack in nodes if nodes[1]['type'] == 'Attack step'} 
+
+for episode in Episodes:
+
+    attacks = []
     episode_reward = 0
     state, available_actions = env.reset(rd_seed = rd_seed + episode)
     sttate = translate_state(state)
@@ -237,6 +259,9 @@ for episode in range(Episodes):
         new_state, available_actions, reward, done, _ = env.step(action)
         episode_reward += reward
         new_sttate = translate_state(new_state)
+
+        if action not in attacks:
+            attacks.append(action)
 
         if tuple(sttate) not in list(q_table.keys()):
                     
@@ -264,6 +289,10 @@ for episode in range(Episodes):
         
     episodes_rewards.append(episode_reward)
     succeses.append(_)
+
+    if _:
+        for attack in attacks:
+            alphas[attack] += 1
 
 '''
 Q-Learining testing

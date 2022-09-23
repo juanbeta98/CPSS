@@ -19,7 +19,7 @@ class CPSsenv():
         self.Goals = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Goal']
         self.Skills = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Skill']
 
-        self.max_steps = 13
+        self.max_steps = 20
 
 
     def reset(self, g_state = False, rd_seed = 0):
@@ -77,7 +77,7 @@ class CPSsenv():
         reward = payoff - cost
         self.state = self.assemble_state()
 
-        done = self.check_termination(done)
+        done, _ = self.check_termination(done, _)
 
         self.available_actions = self.get_available_actions()
         self.t += 1
@@ -114,7 +114,7 @@ class CPSsenv():
                         payoff += 1
                         self.goa[node] = 1
                         #done = True
-                        _ = True
+                        #_ = True
 
                     self.collection.append(node)
 
@@ -123,7 +123,9 @@ class CPSsenv():
         return payoff, done, _
     
 
-    def check_termination(self, done):    
+    def check_termination(self, done, _):  
+        _ = 0
+
         # Number of time-steps
         if self.t > self.max_steps:
             done = True
@@ -133,9 +135,9 @@ class CPSsenv():
         for value in self.goa.values():
             if value == 0:
                 all_goals = False
-        if all_goals: done = True
+        if all_goals: done = True; _ = 1
 
-        return done
+        return done, _
 
 
     def get_available_actions(self):
