@@ -10,7 +10,7 @@ from numpy.random import random, choice, seed
 import matplotlib.pyplot as plt
 import numpy as np
 
-rd_seed = 0
+rd_seed = 1
 seed(rd_seed)
 
 '''
@@ -30,7 +30,7 @@ nodes = [('r1', {'type': 'Access', 'D': True}),  ('r2', {'type': 'Access', 'D': 
          ('g1', {'type': 'Goal', 'D': False, 'R': 1}), ('g2', {'type': 'Goal', 'D': False, 'R': 1}), ('g3', {'type': 'Goal', 'D': False, 'R': 1}), 
          ('g4', {'type': 'Goal', 'D': False, 'R': 1}), ('g5', {'type': 'Goal', 'D': False, 'R': 1}),
          
-         ('a1',  {'type': 'Attack step', 'D': False, 'p': 0.7,   'C': 50}), ('a2',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 60}),
+         ('a1',  {'type': 'Attack step', 'D': False, 'p': 0.7, 'C': 50}), ('a2',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 60}),
          ('a3',  {'type': 'Attack step', 'D': False, 'p': 0.5, 'C': 60}), ('a4',  {'type': 'Attack step', 'D': False, 'p': 0.1, 'C': 120}),
          ('a5',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 90}), ('a6',  {'type': 'Attack step', 'D': False, 'p': 0.6, 'C': 30}),
          ('a7',  {'type': 'Attack step', 'D': False, 'p': 0.75,'C': 70}), ('a8',  {'type': 'Attack step', 'D': False, 'p': 0.8, 'C': 20}),
@@ -58,7 +58,7 @@ network.add_edges_from(edges)
 
 def translate_state(state):
     trans_state = []
-    for j in range(3):
+    for j in range(4):
         for i in state[j].values():
             trans_state.append(i)
     return trans_state
@@ -67,34 +67,40 @@ def translate_state(state):
 '''
 Q-Learning tranining
 '''
-replicas = 20
+replicas = 10
 Replicas = range(replicas)
 
 ### Q-Learning
 alpha = 0.1                     # How fast does the agent learn
 gamma = 0.95                    # How important are future actions
 
-episodes = 30000                 # Number of episodes
+episodes = 20000                 # Number of episodes
 Episodes = range(episodes)
 
-epsilon = 0.6                    # Rate at which random actions will be 
+epsilon = 0.7                    # Rate at which random actions will be 
 start_e_decaying = 1             # First episode at which decay epsilon
-end_e_decaying = episodes // 2    # Last episode at which decay epsilon
+end_e_decaying = episodes // 6    # Last episode at which decay epsilon
 epsilon_decay_value = epsilon / (end_e_decaying - start_e_decaying)     # Amount of decayment of epsilon   
 
 episodes_rewards = {}
 succeses = {}
+num_states = []
 
 env = CPSsenv(network)
 
 for replica in Replicas:
-    print('Repcation n:',replica)
+    print('Replica:', replica)
 
     episodes_rewards[replica] = []
     succeses[replica] = []
     q_table = {}
 
     for episode in Episodes:
+        # print('Episode:', episode)
+
+        for node in ['k'+str(i) for i in range(1,5)]+['s'+str(i) for i in range(1,4)]:
+            if random() < 0.5:
+                env.nw.nodes()[node]['Done'] = True
 
         episode_reward = 0
         state, available_actions = env.reset(rd_seed = rd_seed + episode * (1 + replica))
@@ -102,6 +108,7 @@ for replica in Replicas:
         done = False
 
         while not done:
+            # print('State: ', state)
             if random() < epsilon or tuple(sttate) not in list(q_table.keys()):
                 action = choice(available_actions)
             elif {i:j for i,j in q_table[tuple(sttate)].items() if j in available_actions} == {}:
@@ -110,6 +117,7 @@ for replica in Replicas:
                 real_dict = {i:j for i,j in q_table[tuple(sttate)].items() if j in available_actions}
                 action = max(real_dict, key = real_dict.get)
 
+            # print(action)
             new_state, available_actions, reward, done, _ = env.step(action)
             episode_reward += reward
             new_sttate = translate_state(new_state)
@@ -134,24 +142,30 @@ for replica in Replicas:
                 
             state = new_state
             sttate = new_sttate
-        
-        
+
+            if replica == 0:
+                num_states.append(len(list(q_table.keys())))
+            # print(num_states[-1])
+            # print(available_actions)
+
         if end_e_decaying >= episode >= start_e_decaying:       # Decay epsilon
                 epsilon -= epsilon_decay_value
             
         episodes_rewards[replica].append(episode_reward)
         succeses[replica].append(_)
+        
 
 '''
 Mobiled-averaged rewards for plotting 
 '''
-avg_episodes = 250
+avg_episodes = 500
 average_rewards = []
 average_probs = []
 for episode in Episodes:
     if episode <= avg_episodes/2:
         av_rw = 0
         av_num = 0
+        av_st = 0
         for replica in Replicas:
             av_rw += sum(episodes_rewards[replica][:avg_episodes])
             av_num += sum(succeses[replica][:avg_episodes])
@@ -191,6 +205,15 @@ plt.xlabel('Episodes')
 plt.ylabel('Proportion of succesfull episodes')
 plt.show()
 
+
+'''
+Ploting number of states
+'''
+plt.plot(num_states, color = 'pink')
+plt.title('Number of explored states')
+plt.xlabel('Episodes')
+plt.ylabel('Explored states')
+plt.show()
 
 '''
 Q-Learning training
@@ -239,7 +262,7 @@ for episode in range(Episodes):
     if end_e_decaying >= episode >= start_e_decaying:       # Decay epsilon
             epsilon -= epsilon_decay_value
         
-    episode_rewards.append(episode_reward)
+    episodes_rewards.append(episode_reward)
     succeses.append(_)
 
 '''

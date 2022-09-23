@@ -19,7 +19,7 @@ class CPSsenv():
         self.Goals = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Goal']
         self.Skills = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Skill']
 
-        self.max_steps = 7
+        self.max_steps = 13
 
 
     def reset(self, g_state = False, rd_seed = 0):
@@ -113,7 +113,7 @@ class CPSsenv():
                     elif node_type == 'Goal' and self.goa[node] == 0:
                         payoff += 1
                         self.goa[node] = 1
-                        done = True
+                        #done = True
                         _ = True
 
                     self.collection.append(node)
@@ -122,12 +122,19 @@ class CPSsenv():
         
         return payoff, done, _
     
-    
+
     def check_termination(self, done):    
         # Number of time-steps
         if self.t > self.max_steps:
             done = True
         
+        # Obtain all goals
+        all_goals = True
+        for value in self.goa.values():
+            if value == 0:
+                all_goals = False
+        if all_goals: done = True
+
         return done
 
 
@@ -155,6 +162,6 @@ class CPSsenv():
         elif action == 'a15' and ('k4' in self.collection and 'r7' in self.collection):     flag = True
         elif action == 'a16' and ('s3' in self.collection and 'r8' in self.collection):     flag = True
         elif action == 'a17' and ('r8' in self.collection):                                 flag = True 
-        elif action == 'a18' and ('g1' in self.colleciton):                                 flag = True
+        elif action == 'a18' and ('g1' in self.collection):                                 flag = True
 
         return flag
