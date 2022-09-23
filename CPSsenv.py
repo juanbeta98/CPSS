@@ -19,7 +19,7 @@ class CPSsenv():
         self.Goals = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Goal']
         self.Skills = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Skill']
 
-        self.max_steps = 5
+        self.max_steps = 7
 
 
     def reset(self, g_state = False, rd_seed = 0):
@@ -122,6 +122,7 @@ class CPSsenv():
         
         return payoff, done, _
     
+    
     def check_termination(self, done):    
         # Number of time-steps
         if self.t > self.max_steps:
@@ -129,6 +130,31 @@ class CPSsenv():
         
         return done
 
+
     def get_available_actions(self):
-        available_actions = [x for x in self.Attack_steps if any(node in self.collection for node in self.nw.predecessors(x)) and self.act[x] == 0]
+        available_actions = [x for x in self.Attack_steps if self.eval_predecessors(x) and self.act[x] == 0]
         return available_actions
+    
+    # TODO Generalization
+    def eval_predecessors(self, action):
+        flag = False
+        if action ==   'a1'  and ('r1' in self.collection and 'k1' in self.collection):      flag = True
+        elif action == 'a2'  and ('r1' in self.collection and 's1' in self.collection):      flag = True
+        elif action == 'a3'  and ('s2' in self.collection and any(node in self.collection for node in ['r1', 'r3', 'r4'])): flag = True
+        elif action == 'a4'  and ('s2' in self.collection and any(node in self.collection for node in ['r1', 'r2', 'r4'])): flag = True
+        elif action == 'a5'  and ('s2' in self.collection and any(node in self.collection for node in ['r1', 'r2', 'r3'])): flag = True
+        elif action == 'a6'  and ('s2' in self.collection and 'r2' in self.collection):     flag = True
+        elif action == 'a7'  and ('s3' in self.collection and 'r5' in self.collection):     flag = True
+        elif action == 'a8'  and ('s3' in self.collection and 'r5' in self.collection):     flag = True
+        elif action == 'a9'  and (any(node in self.collection for node in ['r2','r3','r4','r5'])):           flag = True
+        elif action == 'a10' and ('g1' in self.collection):                                 flag = True
+        elif action == 'a11' and ('g1' in self.collection):                                 flag = True
+        elif action == 'a12' and ('k2' in self.collection and 'r6' in self.collection):     flag = True
+        elif action == 'a13' and ('r6' in self.collection):                                 flag = True
+        elif action == 'a14' and ('k3' in self.collection and 'r6' in self.collection):     flag = True
+        elif action == 'a15' and ('k4' in self.collection and 'r7' in self.collection):     flag = True
+        elif action == 'a16' and ('s3' in self.collection and 'r8' in self.collection):     flag = True
+        elif action == 'a17' and ('r8' in self.collection):                                 flag = True 
+        elif action == 'a18' and ('g1' in self.colleciton):                                 flag = True
+
+        return flag

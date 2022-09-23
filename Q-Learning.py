@@ -30,7 +30,7 @@ nodes = [('r1', {'type': 'Access', 'D': True}),  ('r2', {'type': 'Access', 'D': 
          ('g1', {'type': 'Goal', 'D': False, 'R': 1}), ('g2', {'type': 'Goal', 'D': False, 'R': 1}), ('g3', {'type': 'Goal', 'D': False, 'R': 1}), 
          ('g4', {'type': 'Goal', 'D': False, 'R': 1}), ('g5', {'type': 'Goal', 'D': False, 'R': 1}),
          
-         ('a1',  {'type': 'Attack step', 'D': False, 'p': 1,   'C': 50}), ('a2',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 60}),
+         ('a1',  {'type': 'Attack step', 'D': False, 'p': 0.7,   'C': 50}), ('a2',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 60}),
          ('a3',  {'type': 'Attack step', 'D': False, 'p': 0.5, 'C': 60}), ('a4',  {'type': 'Attack step', 'D': False, 'p': 0.1, 'C': 120}),
          ('a5',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 90}), ('a6',  {'type': 'Attack step', 'D': False, 'p': 0.6, 'C': 30}),
          ('a7',  {'type': 'Attack step', 'D': False, 'p': 0.75,'C': 70}), ('a8',  {'type': 'Attack step', 'D': False, 'p': 0.8, 'C': 20}),
@@ -42,7 +42,7 @@ nodes = [('r1', {'type': 'Access', 'D': True}),  ('r2', {'type': 'Access', 'D': 
 
 for node in nodes:
     if node[1]['type'] == 'Attack step':
-        node[1]['C'] /= 300
+        node[1]['C'] /= 200
 
 network.add_nodes_from(nodes)
 
@@ -67,18 +67,19 @@ def translate_state(state):
 '''
 Q-Learning tranining
 '''
-num_replications = 20
-Replications = range(num_replications)
+replicas = 20
+Replicas = range(replicas)
 
 ### Q-Learning
-alpha = 0.1         # How fast does the agent learn
-gamma = 0.95             # How important are future actions
+alpha = 0.1                     # How fast does the agent learn
+gamma = 0.95                    # How important are future actions
 
-Episodes = 30000            # Number of episodes
+episodes = 30000                 # Number of episodes
+Episodes = range(episodes)
 
-epsilon = 0.7                    # Rate at which random actions will be 
+epsilon = 0.6                    # Rate at which random actions will be 
 start_e_decaying = 1             # First episode at which decay epsilon
-end_e_decaying = Episodes // 2   # Last episode at which decay epsilon
+end_e_decaying = episodes // 2    # Last episode at which decay epsilon
 epsilon_decay_value = epsilon / (end_e_decaying - start_e_decaying)     # Amount of decayment of epsilon   
 
 episodes_rewards = {}
@@ -86,13 +87,14 @@ succeses = {}
 
 env = CPSsenv(network)
 
-for replica in Replications:
-
+for replica in Replicas:
     print('Repcation n:',replica)
-    q_table = {}
+
     episodes_rewards[replica] = []
     succeses[replica] = []
-    for episode in range(Episodes):
+    q_table = {}
+
+    for episode in Episodes:
 
         episode_reward = 0
         state, available_actions = env.reset(rd_seed = rd_seed + episode * (1 + replica))
@@ -133,6 +135,7 @@ for replica in Replications:
             state = new_state
             sttate = new_sttate
         
+        
         if end_e_decaying >= episode >= start_e_decaying:       # Decay epsilon
                 epsilon -= epsilon_decay_value
             
@@ -142,21 +145,38 @@ for replica in Replications:
 '''
 Mobiled-averaged rewards for plotting 
 '''
-average_episodes = 500
-averaged_rewards = []
-for episode in range(Episodes):
-    if episode <= average_episodes/2:
+avg_episodes = 250
+average_rewards = []
+average_probs = []
+for episode in Episodes:
+    if episode <= avg_episodes/2:
         av_rw = 0
-        averaged_rewards.append(sum(episodes_rewards[replica][:average_episodes] for replica in Replications)/average_episodes)
-    elif episode <= Episodes - average_episodes/2:
-        lower = int(episode-average_episodes/2)
-        upper = int(episode+average_episodes/2)
-        averaged_rewards.append(sum(episodes_rewards[replica][lower:upper] for replica in Replications)/average_episodes)
+        av_num = 0
+        for replica in Replicas:
+            av_rw += sum(episodes_rewards[replica][:avg_episodes])
+            av_num += sum(succeses[replica][:avg_episodes])
+        average_rewards.append(av_rw/(avg_episodes*replicas))
+        average_probs.append(av_num/(avg_episodes*replicas))
+    elif episode <= episodes - avg_episodes/2:
+        av_rw = 0
+        av_num = 0
+        lower = int(episode-avg_episodes/2)
+        upper = int(episode+avg_episodes/2)
+        for replica in Replicas:
+            av_rw += sum(episodes_rewards[replica][lower:upper])
+            av_num += sum(succeses[replica][lower:upper])
+        average_rewards.append(av_rw/(avg_episodes*replicas))
+        average_probs.append(av_num/(avg_episodes*replicas))
     else:
-        averaged_rewards.append(sum(episodes_rewards[replica][Episodes - average_episodes:] for replica in Replications)/average_episodes)
+        av_rw = 0
+        av_num = 0
+        for replica in Replicas:
+            av_rw += sum(episodes_rewards[replica][episodes - avg_episodes:])
+            av_num += sum(succeses[replica][episodes - avg_episodes:])
+        average_rewards.append(av_rw/(avg_episodes*replicas))
+        average_probs.append(av_num/(avg_episodes*replicas))
 
-print(sum(succeses))
-plt.plot(averaged_rewards, color = 'purple')
+plt.plot(average_rewards, color = 'purple')
 plt.title('Average reward through the episodes')
 plt.xlabel('Episodes')
 plt.ylabel('Average reward')
@@ -165,8 +185,7 @@ plt.show()
 '''
 Ploting succesfull episodes
 '''
-probs = [sum(succeses[episode])/num_replications for episode in Episodes]
-plt.plot(probs, color = 'blue')
+plt.plot(average_probs, color = 'blue')
 plt.title('Succesfull attacks through the episodes')
 plt.xlabel('Episodes')
 plt.ylabel('Proportion of succesfull episodes')
@@ -220,7 +239,7 @@ for episode in range(Episodes):
     if end_e_decaying >= episode >= start_e_decaying:       # Decay epsilon
             epsilon -= epsilon_decay_value
         
-    episodes_rewards.append(episode_reward)
+    episode_rewards.append(episode_reward)
     succeses.append(_)
 
 '''
