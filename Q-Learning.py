@@ -10,7 +10,7 @@ from numpy.random import random, choice, seed
 import matplotlib.pyplot as plt
 import numpy as np
 
-rd_seed = 1
+rd_seed = 2
 seed(rd_seed)
 
 '''
@@ -42,9 +42,9 @@ nodes = [('r1', {'type': 'Access', 'D': False}),  ('r2', {'type': 'Access', 'D':
 
 for node in nodes:
     if node[1]['type'] == 'Attack step':
-        node[1]['C'] /= 250
+        node[1]['C'] /= 200
     elif node[1]['type'] == 'Goal':
-        node[1]['R'] *= 2
+        node[1]['R'] *= 3
 
 network.add_nodes_from(nodes)
 
@@ -69,7 +69,7 @@ def translate_state(state):
 '''
 Q-Learning tranining
 '''
-replicas = 5
+replicas = 10
 Replicas = range(replicas)
 
 ### Q-Learning
@@ -151,8 +151,8 @@ for replica in Replicas:
             state = new_state
             sttate = new_sttate
 
-            if replica == 0:
-                num_states.append(len(list(q_table.keys())))
+        if replica == 0:
+            num_states.append(len(list(q_table.keys())))
             # print(num_states[-1])
             # print(available_actions)
 
@@ -166,19 +166,18 @@ for replica in Replicas:
 '''
 Mobiled-averaged rewards for plotting 
 '''
-avg_episodes = 1000
+avg_episodes = 500
 average_rewards = []
 average_probs = []
 for episode in Episodes:
     if episode <= avg_episodes/2:
         av_rw = 0
         av_num = 0
-        av_st = 0
         for replica in Replicas:
             av_rw += sum(episodes_rewards[replica][:avg_episodes])
             av_num += sum(succeses[replica][:avg_episodes])
         average_rewards.append(av_rw/(avg_episodes*replicas))
-        average_probs.append(av_num/(avg_episodes*replicas))
+        average_probs.append(av_num/((avg_episodes*replicas)))
     elif episode <= episodes - avg_episodes/2:
         av_rw = 0
         av_num = 0
@@ -196,7 +195,7 @@ for episode in Episodes:
             av_rw += sum(episodes_rewards[replica][episodes - avg_episodes:])
             av_num += sum(succeses[replica][episodes - avg_episodes:])
         average_rewards.append(av_rw/(avg_episodes*replicas))
-        average_probs.append(av_num/(avg_episodes*replicas))
+        average_probs.append(av_num/((avg_episodes+1)*replicas))
 
 plt.plot(average_rewards, color = 'purple')
 plt.title('Average reward through the episodes')
@@ -224,22 +223,30 @@ plt.ylabel('Explored states')
 plt.show()
 
 
-
-
-
-
-
 '''
 Q-Learning training
 '''
-env = CPSsenv(network)
 
 q_table = {}
 episodes_rewards = []
 succeses = []
-alphas = {attack:0 for attack in nodes if nodes[1]['type'] == 'Attack step'} 
+alphas = {attack[0]:0 for attack in nodes if attack[1]['type'] == 'Attack step'} 
 
 for episode in Episodes:
+
+    env = CPSsenv(network)
+
+    # print('Episode:', episode)
+    initial = ['r1', 'r6']
+    node = choice(initial)
+    initial.remove(node)
+    env.nw.nodes()[node]['D'] = True
+    if random() < 0.5:
+        env.nw.nodes()[initial[0]]['D'] = True
+
+    for node in ['k'+str(i) for i in range(1,5)]+['s'+str(i) for i in range(1,4)]:
+        if random() < 0.5:
+            env.nw.nodes()[node]['D'] = True
 
     attacks = []
     episode_reward = 0
@@ -294,6 +301,15 @@ for episode in Episodes:
         for attack in attacks:
             alphas[attack] += 1
 
+
+
+plt.bar(list(alphas.keys()), list(alphas.values()), color = 'orange')
+plt.title('Recurence of attacks through successfull episodes')
+plt.xlabel('Attacks')
+plt.ylabel('Frequency per attack')
+plt.show()
+
+
 '''
 Q-Learining testing
 '''
@@ -301,14 +317,13 @@ print('\n \n########## Q-LEARNING TESTING ##########')
 ### Q-Learning
 env = CPSsenv(network)
 
-episode_reward = 0
 state, available_actions = env.reset(rd_seed = rd_seed + 1)
 sttate = translate_state(state)
 done = False
 
 while not done:
 
-    real_dict = {i:j for i,j in q_table[tuple(sttate)].items()}
+    real_dict = {i:j for i,j in q_table[tuple(sttate)].items() if j in available_actions}
     action = max(real_dict, key = real_dict.get)
 
     print(f't = {env.t} \t \t Action = {action}')
@@ -322,3 +337,71 @@ while not done:
 
 print('\n \n')
 
+# '''
+# Alpha calibration
+# '''
+# for i in range(5):
+
+#     env = CPSsenv(network)
+
+#     q_table = {}
+#     episodes_rewards = []
+#     succeses = []
+#     alphas = {attack[0]:0 for attack in nodes if attack[1]['type'] == 'Attack step'} 
+
+#     for episode in Episodes:
+
+#         attacks = []
+#         episode_reward = 0
+#         state, available_actions = env.reset(rd_seed = rd_seed + episode)
+#         sttate = translate_state(state)
+#         done = False
+
+#         while not done:
+#             if random() < epsilon or tuple(sttate) not in list(q_table.keys()):
+#                 action = choice(available_actions)
+#             elif {i:j for i,j in q_table[tuple(sttate)].items() if j in available_actions} == {}:
+#                 action = choice(available_actions)
+#             else:
+#                 real_dict = {i:j for i,j in q_table[tuple(sttate)].items() if j in available_actions}
+#                 action = max(real_dict, key = real_dict.get)
+
+#             new_state, available_actions, reward, done, _ = env.step(action)
+#             episode_reward += reward
+#             new_sttate = translate_state(new_state)
+
+#             if action not in attacks:
+#                 attacks.append(action)
+
+#             if tuple(sttate) not in list(q_table.keys()):
+                        
+#                 q_table[tuple(sttate)] = {}
+#                 q_table[tuple(sttate)][action] = reward
+            
+#             elif new_sttate not in list(q_table.keys()) or action not in q_table[tuple(sttate)].keys():
+                        
+#                 q_table[tuple(sttate)][action] = reward
+                
+#             else:
+                
+#                 max_future_q = max(list(q_table[new_sttate].values()))    # Minimum value of the arriving state
+#                 current_q = q_table[tuple(sttate)][action]                   # Value of current state and action
+            
+#                 new_q = (1 - alpha) * current_q + alpha * (reward + gamma * max_future_q)               
+            
+#                 q_table[tuple(sttate)][action] = new_q     # Update Q Value for current state and action
+                
+#             state = new_state
+#             sttate = new_sttate
+        
+#         if end_e_decaying >= episode >= start_e_decaying:       # Decay epsilon
+#                 epsilon -= epsilon_decay_value
+            
+#         episodes_rewards.append(episode_reward)
+#         succeses.append(_)
+
+#         if _:
+#             for attack in attacks:
+#                 alphas[attack] += 1
+
+    
