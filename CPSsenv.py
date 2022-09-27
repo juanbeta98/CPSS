@@ -9,8 +9,11 @@ from numpy.random import random, seed
 
 class CPSsenv():
 
-    def __init__(self, network) -> None:
+    def __init__(self, network, T_max, termination = 'One Goal') -> None:
+        self.termination = termination
 
+        if network == 'SCADA':
+            network = self.gen_SCADA_nw()
         self.nw = network
 
         self.Accesses = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type'] == 'Access']
@@ -19,7 +22,7 @@ class CPSsenv():
         self.Goals = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Goal']
         self.Skills = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type']== 'Skill']
 
-        self.max_steps = 3
+        self.max_steps = T_max
 
 
     def reset(self, g_state = False, rd_seed = 0):
@@ -111,7 +114,7 @@ class CPSsenv():
                     elif node_type == 'Knowledge':
                         self.kno[node] = 1
                     elif node_type == 'Goal' and self.goa[node] == 0:
-                        payoff += 1
+                        payoff += self.nw.nodes()[node]['R']
                         self.goa[node] = 1
                         done = True
                         _ = 1
@@ -123,7 +126,13 @@ class CPSsenv():
         return payoff, done, _
     
 
-    def check_termination(self, done, _):  
+    def check_termination(self, done, _): 
+        if self.termination == 'One Goal':
+            pass
+        else:
+            all_goals = 0 in list(self.goa.values())
+            if all_goals: done = True; _ = 1
+
         # _ = 0
 
         # Number of time-steps
@@ -131,11 +140,7 @@ class CPSsenv():
             done = True
         
         # Obtain all goals
-        # all_goals = True
-        # for value in self.goa.values():
-        #     if value == 0:
-        #         all_goals = False
-        # if all_goals: done = True; _ = 1
+        
 
         return done, _
 
@@ -167,3 +172,69 @@ class CPSsenv():
         elif action == 'a18' and ('g1' in self.collection):                                 flag = True
 
         return flag
+
+
+    def gen_SCADA_nw(self):
+        network = nx.DiGraph()
+
+        nodes = [
+            ('r1', {'type': 'Access', 'D': False}),  ('r2', {'type': 'Access', 'D': False}), ('r3', {'type': 'Access', 'D': False}), 
+            ('r4', {'type': 'Access', 'D': False}), ('r5', {'type': 'Access', 'D': False}), ('r6', {'type': 'Access', 'D': False}),
+            ('r7', {'type': 'Access', 'D': False}), ('r8', {'type': 'Access', 'D': False}),
+            
+            ('k1', {'type': 'Knowledge', 'D': False}), ('k2', {'type': 'Knowledge', 'D': False}),
+            ('k3', {'type': 'Knowledge', 'D': False}), ('k4', {'type': 'Knowledge', 'D': False}),
+            
+            ('s1', {'type': 'Skill', 'D': False}), ('s2', {'type': 'Skill', 'D': False}), ('s3', {'type': 'Skill', 'D': False}),
+            
+            ('g1', {'type': 'Goal', 'D': False, 'R': 1}), ('g2', {'type': 'Goal', 'D': False, 'R': 1}), ('g3', {'type': 'Goal', 'D': False, 'R': 1}), 
+            ('g4', {'type': 'Goal', 'D': False, 'R': 1}), ('g5', {'type': 'Goal', 'D': False, 'R': 1}),
+            
+            ('a1',  {'type': 'Attack step', 'D': False, 'p': 0.7, 'C': 50}), ('a2',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 60}),
+            ('a3',  {'type': 'Attack step', 'D': False, 'p': 0.5, 'C': 60}), ('a4',  {'type': 'Attack step', 'D': False, 'p': 0.1, 'C': 120}),
+            ('a5',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 90}), ('a6',  {'type': 'Attack step', 'D': False, 'p': 0.6, 'C': 30}),
+            ('a7',  {'type': 'Attack step', 'D': False, 'p': 0.75,'C': 70}), ('a8',  {'type': 'Attack step', 'D': False, 'p': 0.8, 'C': 20}),
+            ('a9',  {'type': 'Attack step', 'D': False, 'p': 0.95,'C': 10}), ('a10', {'type': 'Attack step', 'D': False, 'p': 0.5, 'C': 90}),
+            ('a11', {'type': 'Attack step', 'D': False, 'p': 0.85,'C': 20}), ('a12', {'type': 'Attack step', 'D': False, 'p': 1,   'C': 1}),
+            ('a13', {'type': 'Attack step', 'D': False, 'p': 0.7, 'C': 10}), ('a14', {'type': 'Attack step', 'D': False, 'p': 1,   'C': 1}),    
+            ('a15', {'type': 'Attack step', 'D': False, 'p': 1,   'C': 1}),  ('a16', {'type': 'Attack step', 'D': False, 'p': 0.65,'C': 90}),
+            ('a17', {'type': 'Attack step', 'D': False, 'p': 0.75,'C': 150}),('a18', {'type': 'Attack step', 'D': False, 'p': 0.5, 'C': 20})
+                ]
+
+        for node in nodes:
+            if node[1]['type'] == 'Attack step':
+                node[1]['C'] /= 200
+            elif node[1]['type'] == 'Goal':
+                node[1]['R'] *= 1
+
+        network.add_nodes_from(nodes)
+
+        edges = [('r1','a1'), ('r1','a2'), ('r1','a3'), ('r1','a4'), ('r1','a5'), ('k1','a1'), ('k2','a12'),('k3','a14'), ('k4','a15'), ('s1','a2'),
+                ('s2','a3'), ('s2','a4'), ('s2','a5'), ('s3','a16'),('s3','a7'), ('a1','r2'), ('a2','r2'), ('a3','r2'),  ('a4','r3'),  ('a5','r4'),
+                ('r2','a4'), ('r2','a5'), ('r2','a6'), ('r2','a9'), ('r3','a3'), ('r3','a5'), ('r3','a8'), ('r3','a9'),
+                
+                ('r6','a12'),('r6','a14'),('r3','a13'),('r7','a15'),('r8','a16'), ('r8','a17'),('r4','a3'), ('r4','a4'), ('r4','a9'), ('a6','r5'),
+                ('r5','a7'), ('r5','a8'), ('r5','a9'), ('a7','g1'), ('a8','g2'),  ('a9','g3'), ('g1','a10'),('g1','a11'),('g1','a18'),
+                ('a10','g4'),('a11','g2'),('a12','r2'),('a13','r7'),('a14','r5'), ('a15','r8'),('a16','g1'),('a17','g5'),('a18','g5'),]
+
+        network.add_edges_from(edges)
+
+        return network
+
+    def init_netwok(self, init):
+
+        if 'Access' in init.keys():
+            for access in init['Access']:
+                self.nw.nodes()[access]['D'] = 1
+        if 'Skills' in init.keys():
+            for skill in init['Skills']:
+                self.nw.nodes()[skill]['D'] = 1
+        if 'Knowledges' in init.keys():
+            for know in init['Knowledges']:
+                self.nw.nodes()[know]['D'] = 1
+        if 'Goals' in init.keys():
+            for goal in init['Goals']:
+                self.nw.nodes()[goal]['D'] = 1
+        if 'Probs' in init.keys():
+            for att,prob in init['Probs'].items():
+                self.nw.nodes()[att] = prob
