@@ -13,9 +13,7 @@ import numpy as np
 rd_seed = 2
 seed(rd_seed)
 
-'''
-SCADA System example
-'''
+
 network = nx.DiGraph()
 
 nodes = [('r1', {'type': 'Access', 'D': False}),  ('r2', {'type': 'Access', 'D': False}), ('r3', {'type': 'Access', 'D': False}), 

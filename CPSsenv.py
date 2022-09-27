@@ -156,6 +156,9 @@ class CPSsenv():
 
 
     def gen_SCADA_nw(self):
+        '''
+        SCADA System example
+        '''
         network = nx.DiGraph()
 
         nodes = [
