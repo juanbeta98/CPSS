@@ -9,11 +9,12 @@ from numpy.random import random, seed
 
 class CPSsenv():
 
-    def __init__(self, network, T_max, termination = 'One Goal') -> None:
+    def __init__(self, network, T_max, termination = 'One Goal', params = None) -> None:
         self.termination = termination
 
         if network == 'SCADA':
             network = self.gen_SCADA_nw()
+            network = self.set_params(network, params)
         self.nw = network
 
         self.Accesses = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type'] == 'Access']
@@ -25,9 +26,12 @@ class CPSsenv():
         self.max_steps = T_max
 
 
-    def reset(self, g_state = False, rd_seed = 0):
+    def reset(self, init_state = None, rd_seed = 0):
         random(rd_seed)
         self.t = 0
+
+        if init_state != None:
+            self.init_network(init_state)
 
         # Reseting the environment to the network configuration
         self.acc = {node:0 if self.nw.nodes()[node]['D'] == False else 1 for node in self.Accesses}
@@ -37,29 +41,6 @@ class CPSsenv():
         self.act = {node:0 for node in self.Attack_steps}
 
         self.collection = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type'] in ['Access', 'Knowledge','Skill' , 'Goal'] and self.nw.nodes()[node]['D'] == True]
-
-        # Reseting the environment to a given state
-        if g_state:
-            self.collection = []
-            for node in self.Accesses:
-                self.acc[node] = g_state[0][node] 
-                if g_state[0][node] == 1:
-                    self.collection.append(node) 
-                        
-            for node in self.Knowledges:
-                self.kno[node] = g_state[1][node]
-                if g_state[1][node] == 1:
-                    self.collection.append(node)
-                   
-            for node in self.Skills:
-                self.ski[node] = g_state[2][node]
-                if g_state[2][node] == 1:
-                    self.collection.append(node)  
-            
-            for node in self.Goals:
-                self.goa[node] = g_state[3][node]
-                if g_state[3][node] == 1:
-                    self.collection.append(node)
 
         self.available_actions = self.get_available_actions()
         self.state = self.assemble_state()
@@ -221,20 +202,63 @@ class CPSsenv():
 
         return network
 
-    def init_netwok(self, init):
 
-        if 'Access' in init.keys():
-            for access in init['Access']:
-                self.nw.nodes()[access]['D'] = 1
-        if 'Skills' in init.keys():
-            for skill in init['Skills']:
-                self.nw.nodes()[skill]['D'] = 1
-        if 'Knowledges' in init.keys():
-            for know in init['Knowledges']:
-                self.nw.nodes()[know]['D'] = 1
-        if 'Goals' in init.keys():
-            for goal in init['Goals']:
-                self.nw.nodes()[goal]['D'] = 1
-        if 'Probs' in init.keys():
-            for att,prob in init['Probs'].items():
-                self.nw.nodes()[att] = prob
+    def set_params(self, network, params):
+        if 'Probs' in params.keys():
+            for att,prob in params['Probs'].items():
+                network.nodes()[att] = prob
+        
+        return network
+
+    def init_netwok(self, init_state):
+
+        # Environment's state format
+        if type(init_state) == list:
+            
+            for access in init_state[0].keys():
+                self.nw.nodes()[access]['D'] = bool(init_state[0][access])
+            for know in init_state[1].keys():
+                self.nw.nodes()[know]['D'] = bool(init_state[1][know])
+            for skill in init_state[2].keys():
+                self.nw.nodes()[skill]['D'] = bool(init_state[2][skill])
+            for goal in init_state[3].keys():
+                self.nw.nodes()[goal]['D'] = bool(init_state[3][goal])
+
+
+        # else:
+        #     if 'Access' in init.keys():
+        #         for access in init['Access']:
+        #             self.nw.nodes()[access]['D'] = True
+        #     if 'Skills' in init.keys():
+        #         for skill in init['Skills']:
+        #             self.nw.nodes()[skill]['D'] = 1
+        #     if 'Knowledges' in init.keys():
+        #         for know in init['Knowledges']:
+        #             self.nw.nodes()[know]['D'] = 1
+        #     if 'Goals' in init.keys():
+        #         for goal in init['Goals']:
+        #             self.nw.nodes()[goal]['D'] = 1
+
+            # # Reseting the environment to a given state
+            # if g_state:
+            # self.collection = []
+            # for node in self.Accesses:
+            #     self.acc[node] = g_state[0][node] 
+            #     if g_state[0][node] == 1:
+            #         self.collection.append(node) 
+                        
+            # for node in self.Knowledges:
+            #     self.kno[node] = g_state[1][node]
+            #     if g_state[1][node] == 1:
+            #         self.collection.append(node)
+                   
+            # for node in self.Skills:
+            #     self.ski[node] = g_state[2][node]
+            #     if g_state[2][node] == 1:
+            #         self.collection.append(node)  
+            
+            # for node in self.Goals:
+            #     self.goa[node] = g_state[3][node]
+            #     if g_state[3][node] == 1:
+            #         self.collection.append(node)
+        
