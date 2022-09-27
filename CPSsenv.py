@@ -25,6 +25,13 @@ class CPSsenv():
 
         self.max_steps = T_max
 
+        self.initial_state = [
+                {'a1': 0, 'a2': 0, 'a3': 0, 'a4': 0, 'a5': 0, 'a6': 0, 'a7': 0, 'a8': 0}, 
+                {'k1': 0, 'k2': 0, 'k3': 0, 'k4': 0},
+                {'s1': 0, 's2': 0, 's3': 0}, 
+                {'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0, 'g5': 0}
+                ]
+
 
     def reset(self, init_state = None, rd_seed = 0):
         random(rd_seed)
@@ -213,7 +220,8 @@ class CPSsenv():
         
         return network
 
-    def init_netwok(self, init_state):
+
+    def init_network(self, init_state):
 
         # Environment's state format
         if type(init_state) == list:

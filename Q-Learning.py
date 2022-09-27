@@ -65,23 +65,26 @@ def translate_state(state):
 
 
 '''
-Q-Learning tranining
+Q-Learning training parameters
 '''
 replicas = 10
 Replicas = range(replicas)
 
-### Q-Learning
-alpha = 0.1                     # How fast does the agent learn
-gamma = 0.95                    # How important are future actions
-
 episodes = 20000                 # Number of episodes
 Episodes = range(episodes)
+
+alpha = 0.1                     # How fast does the agent learn
+gamma = 0.95                    # How important are future actions
 
 epsilon = 0.7                    # Rate at which random actions will be 
 start_e_decaying = 1             # First episode at which decay epsilon
 end_e_decaying = episodes // 6    # Last episode at which decay epsilon
 epsilon_decay_value = epsilon / (end_e_decaying - start_e_decaying)     # Amount of decayment of epsilon   
 
+
+'''
+Q-Learning training
+'''
 episodes_rewards = {}
 succeses = {}
 num_states = []
