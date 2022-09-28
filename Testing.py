@@ -27,7 +27,7 @@ env = CPSsenv(network = network, T_max = T_max, termination = termination, nw_pa
 '''
 Policy object
 '''
-solver = CPSsalgorithms(env)
+solver = CPSsalgorithms(env, init_params = init_params)
 
 '''
 
@@ -207,8 +207,14 @@ print(q_table[tuple(solver.translate_state(state))])
 '''
 Value iteration
 '''
+gamma = 0.9
+theta = 0.00009
 state, available_actions = env.reset(init_type = init_type, init_params = init_params)
-states = solver.generate_states(env, init_type, init_params, loops = 50000, load = False)
-print(states)
-print(len(states))
+States = solver.generate_states(env, loops = 50000, load = False)
+
+
+V_hat, policy = solver.Value_Iteration(env, States, gamma, theta)
+for state in policy.keys():
+    print(f'On state {solver.ret_state(state)} -> {policy[state]}')
+
 

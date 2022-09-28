@@ -59,56 +59,66 @@ class CPSsalgorithms():
         return q_table
 
 
-    def Value_Iteration(self, env, states, gamma, delta):
-        v_hat = {tuple(i):0 for i in states}
-        policy = {tuple(i):'' for i in states}
+    def Value_Iteration(self, env, States, gamma, theta):
+        v_hat = {}
+        for ii in States:
+            v_hat[tuple(ii)] = 0
+        # v_hat = {tuple(ii):0 for ii in States}
+
+        print(v_hat)
+        policy = {tuple(state):'' for state in States}
 
         while True:
 
-            for index in range(len(states)):
- 
-                state = self.ret_state(states[index])
-                sttate = states[index]
+            delta = 0
 
-                state, available_actions = env.reset(init_type = 'env state', init_params = state) 
+            for index in range(len(States)):
+ 
+                state = deepcopy(self.ret_state(States[index]))
+                sttate = States[index]
+
+                st, available_actions = env.reset(init_type = 'env state', init_params = state) 
 
                 old_val = deepcopy(v_hat[tuple(sttate)])
 
-                mejor_accion = 0
-                mejor_valor = -20
+                mejor_accion = ''
+                mejor_valor = -2
+                valor = 0
 
                 if available_actions != []:
                     for action in available_actions:
 
-                        state, available_actions = env.reset(init_type = 'env state', init_params = state) 
+                        st, av_act = env.reset(init_type = 'env state', init_params = state) 
                         s_prima, av_act, reward, done, _ = env.step(action, stochastic = False)
                         s_primaa = self.translate_state(s_prima)
                     
-                        if s_primaa in states:
-                            valor = env.nw.nodes()[action]['P'] * ((reward) + gamma * v_hat[tuple(s_primaa)]) + \
-                                (1-env.nw.nodes()[action]['P']) * (env.nw.nodes()[action]['C'] + gamma * v_hat[tuple(state)])
-                    
+                        if s_primaa in States and not done:
+                            valor = env.nw.nodes()[action]['p'] * ((reward) + gamma * v_hat[tuple(s_primaa)]) + \
+                                (1-env.nw.nodes()[action]['p']) * (-env.nw.nodes()[action]['C'] + gamma * v_hat[tuple(s_primaa)])
+
+                        elif s_primaa in States and done:
+                            valor = env.nw.nodes()[action]['p'] * (reward) + \
+                                (1-env.nw.nodes()[action]['p']) * env.nw.nodes()[action]['C']
+
                         else:
-                            valor = -20
-                            states.append(s_primaa)
-                            v_hat[tuple(s_primaa)] = 0
+                            States.append(s_primaa)
+                            valor = 0
+                            v_hat[tuple(s_primaa)] = valor
 
                         if valor > mejor_valor:
                             mejor_valor = valor
                             mejor_accion = action
 
         
-                v_hat[tuple(state)] = mejor_valor
-                policy[tuple(state)] = mejor_accion
+                v_hat[tuple(sttate)] = mejor_valor
+                policy[tuple(sttate)] = mejor_accion
 
-                delta =  max(delta, abs(v_hat[tuple(s_primaa)]- old_val))
+                delta =  max(delta, abs(v_hat[tuple(sttate)]- old_val))
 
-            if delta < 0.9:
+            if delta < theta:
                 break
 
-
         return v_hat, policy
-
 
 
 
@@ -117,17 +127,16 @@ class CPSsalgorithms():
         states = []
         if load == False:
             for iter in range(loops):
-                if iter%5000==0: 
-                    done = False
-                    state, available_actions = env.reset(init_type = self.init_type, init_params = self.init_params)   
-                    states.append(self.translate_state(state))
+                done = False
+                state, available_actions = env.reset(init_type = self.init_type, init_params = self.init_params)  
+                if iter == 0:   states.append(self.translate_state(state)) 
 
-                    while not done:
-                        action = choice(available_actions)
-                        st_prime, available_actions, reward, done, _ = env.step(action, stochastic = False)
-                            
-                        if not done and st_prime not in states:
-                            states.append(self.translate_state(st_prime))
+                while not done:
+                    action = choice(available_actions)
+                    st_prime, available_actions, reward, done, _ = env.step(action, stochastic = False)
+                        
+                    if not done and st_prime not in states:
+                        states.append(self.translate_state(st_prime))
         
         else:
             inter_list = []

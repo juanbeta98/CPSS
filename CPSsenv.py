@@ -243,8 +243,7 @@ class CPSsenv():
                     self.GOAL = goal
                 # TODO IMPLEMENT LIST OF DESIRED GOALS WHEN 
         # TODO IMPLEMENT ELSE: AT LEAST ONE GOAL HAS REWARD
-        
-        
+         
 
     def init_network(self, init_type, *args):
 
