@@ -33,15 +33,15 @@ solver = CPSsalgorithms(env)
 Q-Learning parameters
 '''
 replicas = 10
-episodes = 10000
+episodes = 5000
 Episodes = range(episodes) 
 
 alpha = 0.1                             # How fast does the agent learn
 gamma = 0.95                            # How important are future actions
 
-epsilon = 0.8                           # Rate at which random actions will be 
+epsilon = 0.9                           # Rate at which random actions will be 
 start_e_decaying = 1                    # First episode at which decay epsilon
-end_e_decaying = round(episodes * 0.5)  # Last episode at which decay epsilona
+end_e_decaying = round(episodes * 0.7)  # Last episode at which decay epsilona
 epsilon_decay_value = epsilon / (end_e_decaying - start_e_decaying)
 
 '''
@@ -92,7 +92,7 @@ print(f'Success prob on last 10% ep:   {round(sum(successes[int(0.9*episodes):])
 '''
 Mobiled-averaged rewards for plotting 
 '''
-avg_episodes = 250
+avg_episodes = 500
 average_rewards = []
 average_probs = []
 for episode in Episodes:
@@ -114,7 +114,7 @@ for episode in Episodes:
         average_rewards.append(av_rw/(avg_episodes))
         average_probs.append(av_num/((avg_episodes)))
 
-
+print(successes)
 plt.plot(average_rewards, color = 'purple')
 plt.title('Average reward through the episodes')
 plt.xlabel('Episodes')
@@ -156,8 +156,9 @@ Q-Learning testing
 episode_reward = 0
 state, available_actions = env.reset(init_type = init_type, init_params = init_params, rd_seed = rd_seed * 2) 
 done = False
-
-while not done:
+sss = []
+for episode in range(100):
+    while not done:
 
         action = solver.Q_Learning_action(q_table, state, available_actions, epsilon = 0)
 
@@ -167,7 +168,10 @@ while not done:
 
         state = new_state
 
-if _['Success']:
-    print('Successful testing episode')
-else:
-    print('Unsuccessful testing episode')
+    if _['Success']:
+        print('Successful testing episode')
+    else:
+        print('Unsuccessful testing episode')
+    sss.append(int(_['Success']))
+
+print(f'Performed {round(sum(sss)/100,2)}')

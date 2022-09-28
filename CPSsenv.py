@@ -232,7 +232,7 @@ class CPSsenv():
 
         if 'Rewards' in params.keys():
             for goal in params['Rewards']:
-                self.nw.nodes()[goal]['R'] = 10
+                self.nw.nodes()[goal]['R'] = 2
                 if len(params['Rewards']) == 1:
                     self.GOAL = goal
                 # TODO IMPLEMENT LIST OF DESIRED GOALS WHEN 
