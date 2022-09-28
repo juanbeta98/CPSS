@@ -30,7 +30,7 @@ class CPSsalgorithms():
         return action
 
 
-    def Q_learning_update(self, q_table, state, action, reward, new_state, alpha = 0.1, gamma = 0.95):
+    def Q_Learning_update(self, q_table, state, action, reward, new_state, alpha = 0.1, gamma = 0.95):
         sttate = self.translate_state(state)
         new_sttate = self.translate_state(new_state)
 

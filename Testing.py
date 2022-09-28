@@ -4,17 +4,18 @@ import networkx as nx
 from numpy.random import random, choice, seed
 import matplotlib.pyplot as plt
 import numpy as np
+from time import time
 
 '''
 ENVIRONMENT PARAMETERS
 '''
 network = 'SCADA'
-T_max = 5
+T_max = 10
 termination = 'one goal'
-nw_params = {'Rewards': ['g1']}
+nw_params = {'Rewards': ['g5']}
 rd_seed = 0
 init_type = 'active list'
-init_params = ['r1']
+init_params = ['r1', 's1', 's3', 'k1', 'k2','k4']
 
 '''
 Creating environment object
@@ -32,35 +33,38 @@ solver = CPSsalgorithms(env)
 Q-Learning parameters
 '''
 replicas = 10
-episodes = 20000
+episodes = 10000
 Episodes = range(episodes) 
 
-alpha = 0.1                     # How fast does the agent learn
-gamma = 0.95                    # How important are future actions
+alpha = 0.1                             # How fast does the agent learn
+gamma = 0.95                            # How important are future actions
 
-epsilon = 0.7                    # Rate at which random actions will be 
-start_e_decaying = 1             # First episode at which decay epsilon
-end_e_decaying = episodes // 6    # Last episode at which decay epsilona
+epsilon = 0.8                           # Rate at which random actions will be 
+start_e_decaying = 1                    # First episode at which decay epsilon
+end_e_decaying = round(episodes * 0.5)  # Last episode at which decay epsilona
 epsilon_decay_value = epsilon / (end_e_decaying - start_e_decaying)
 
 '''
 Q-Learning Training
 '''
+start = time()
 q_table = {} 
-episodes_rewards, succeses, num_states = [], [], []
+episodes_rewards, successes, num_states = [], [], []
+alphas = {attack:0 for attack in env.Attack_steps} 
 
 for episode in Episodes:
     '''
     Initializing environment
     '''
-    state, available_actions = env.reset(init_type = init_type, init_params = {}) 
+    state, available_actions = env.reset(init_type = init_type, init_params = init_params) 
     done = False
     episode_reward = 0
+    chosen_actions = []
 
     while not done:
-
         action = solver.Q_Learning_action(q_table, state, available_actions, epsilon = epsilon)
 
+        chosen_actions.append(action)
         new_state, available_actions, reward, done, _ = env.step(action)
         episode_reward += reward
 
@@ -70,14 +74,100 @@ for episode in Episodes:
         epsilon -= epsilon_decay_value
 
     episodes_rewards.append(episode_reward)
-    succeses.append(_['Success'])
+    successes.append(int(_['Success']))
     num_states.append(len(list(q_table.keys())))
+
+    if _['Success']:
+        for action in set(chosen_actions):
+            alphas[action] += 1
                                                
-        
+
+'''
+Training stats
+'''       
+print('\n############## Training done ##############\n')
+print(f'Training time:                 {round(time() - start,2)} s')
+print(f'Success prob on last 10% ep:   {round(sum(successes[int(0.9*episodes):])/(0.1*episodes),2)}')
+
+'''
+Mobiled-averaged rewards for plotting 
+'''
+avg_episodes = 250
+average_rewards = []
+average_probs = []
+for episode in Episodes:
+    if episode <= avg_episodes/2:
+        av_rw = sum(episodes_rewards[:avg_episodes])
+        av_num = sum(successes[:avg_episodes]) 
+        average_rewards.append(av_rw/(avg_episodes))
+        average_probs.append(av_num/((avg_episodes)))
+    elif episode <= episodes - avg_episodes/2:
+        lower = int(episode-avg_episodes/2)
+        upper = int(episode+avg_episodes/2)
+        av_rw = sum(episodes_rewards[lower:upper])
+        av_num = sum(successes[lower:upper])
+        average_rewards.append(av_rw/(avg_episodes))
+        average_probs.append(av_num/(avg_episodes))
+    else:
+        av_rw = sum(episodes_rewards[episodes - avg_episodes:])
+        av_num = sum(successes[episodes - avg_episodes:])  
+        average_rewards.append(av_rw/(avg_episodes))
+        average_probs.append(av_num/((avg_episodes)))
 
 
-plt.plot(episodes_rewards, color = 'purple')
+plt.plot(average_rewards, color = 'purple')
 plt.title('Average reward through the episodes')
 plt.xlabel('Episodes')
 plt.ylabel('Average reward')
 plt.show()
+
+'''
+Ploting succesfull episodes
+'''
+plt.plot(average_probs, color = 'blue')
+plt.title('Succesfull attacks through the episodes')
+plt.xlabel('Episodes')
+plt.ylabel('Proportion of succesfull episodes')
+plt.show()
+
+
+'''
+Ploting number of states
+'''
+plt.plot(num_states, color = 'pink')
+plt.title('Number of explored states')
+plt.xlabel('Episodes')
+plt.ylabel('Explored states')
+plt.show()
+
+'''
+Ploting frequency of actions on succesfull attacks
+'''
+plt.bar(list(alphas.keys()), list(alphas.values()), color = 'orange')
+plt.title('Recurence of attacks through successfull episodes')
+plt.xlabel('Attacks')
+plt.ylabel('Frequency per attack')
+plt.show()
+
+
+'''
+Q-Learning testing
+'''
+episode_reward = 0
+state, available_actions = env.reset(init_type = init_type, init_params = init_params, rd_seed = rd_seed * 2) 
+done = False
+
+while not done:
+
+        action = solver.Q_Learning_action(q_table, state, available_actions, epsilon = 0)
+
+        new_state, available_actions, reward, done, _ = env.step(action)
+        print(state[0], state[3], action)
+        episode_reward += reward
+
+        state = new_state
+
+if _['Success']:
+    print('Successful testing episode')
+else:
+    print('Unsuccessful testing episode')
