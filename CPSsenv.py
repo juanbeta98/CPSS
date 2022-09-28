@@ -9,13 +9,14 @@ from numpy.random import random, seed
 
 class CPSsenv():
 
-    def __init__(self, network, T_max, termination = 'One Goal', params = None) -> None:
+    def __init__(self, network, T_max, termination = 'One Goal', nw_params = None) -> None:
         self.termination = termination
 
         if network == 'SCADA':
-            network = self.gen_SCADA_nw()
-            network = self.set_params(network, params)
-        self.nw = network
+            self.gen_SCADA_nw()
+            self.set_params(nw_params)
+        else:
+            self.nw = network
 
         self.Accesses = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type'] == 'Access']
         self.Knowledges = [node for node in self.nw.nodes() if self.nw.nodes()[node]['type'] == 'Knowledge']
@@ -25,20 +26,13 @@ class CPSsenv():
 
         self.max_steps = T_max
 
-        self.initial_state = [
-                {'a1': 0, 'a2': 0, 'a3': 0, 'a4': 0, 'a5': 0, 'a6': 0, 'a7': 0, 'a8': 0}, 
-                {'k1': 0, 'k2': 0, 'k3': 0, 'k4': 0},
-                {'s1': 0, 's2': 0, 's3': 0}, 
-                {'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0, 'g5': 0}
-                ]
 
-
-    def reset(self, init_state = None, rd_seed = 0):
+    def reset(self, init_type = None, params = None, rd_seed = 0):
         random(rd_seed)
         self.t = 0
 
-        if init_state != None:
-            self.init_network(init_state)
+        if params != None:
+            self.init_network(init_type, params)
 
         # Reseting the environment to the network configuration
         self.acc = {node:0 if self.nw.nodes()[node]['D'] == False else 1 for node in self.Accesses}
@@ -54,7 +48,7 @@ class CPSsenv():
         
         return self.state, self.available_actions
 
-    
+   
     def step(self, action, stochastic = True):
         if stochastic:
             W = self.gen_W(action)
@@ -63,12 +57,12 @@ class CPSsenv():
 
         cost = self.nw.nodes()[action]['C']
 
-        payoff, done, _ = self.update_state(action, W)
+        payoff = self.update_state(action, W)
         
         reward = payoff - cost
         self.state = self.assemble_state()
 
-        done, _ = self.check_termination(done, _)
+        done, _ = self.check_termination()
 
         self.available_actions = self.get_available_actions()
         self.t += 1
@@ -90,8 +84,6 @@ class CPSsenv():
     
     def update_state(self, action, W):
         payoff = 0
-        done = False
-        _ = 0
         if W:
             for edge in self.nw.edges(action):
                 node = edge[1]
@@ -104,31 +96,29 @@ class CPSsenv():
                     elif node_type == 'Goal' and self.goa[node] == 0:
                         payoff += self.nw.nodes()[node]['R']
                         self.goa[node] = 1
-                        done = True
-                        _ = 1
 
                     self.collection.append(node)
 
             self.act[action] = 1       
         
-        return payoff, done, _
+        return payoff
     
 
-    def check_termination(self, done, _): 
-        if self.termination == 'One Goal':
-            pass
-        else:
-            all_goals = 0 in list(self.goa.values())
-            if all_goals: done = True; _ = 1
+    def check_termination(self): 
+        _ = {'Success': False}
+        done = False
 
-        # _ = 0
+        if self.termination == 'one goal':
+            if self.goa[self.GOAL] == 1:
+                done = True;    _['Success'] = True
+        elif self.termination == 'all goals':
+            any_goal = 0 in list(self.goa.values())
+            if not any_goal:    
+                done = True;   _['Success'] = True
 
         # Number of time-steps
         if self.t > self.max_steps:
             done = True
-        
-        # Obtain all goals
-        
 
         return done, _
 
@@ -178,8 +168,8 @@ class CPSsenv():
             
             ('s1', {'type': 'Skill', 'D': False}), ('s2', {'type': 'Skill', 'D': False}), ('s3', {'type': 'Skill', 'D': False}),
             
-            ('g1', {'type': 'Goal', 'D': False, 'R': 1}), ('g2', {'type': 'Goal', 'D': False, 'R': 1}), ('g3', {'type': 'Goal', 'D': False, 'R': 1}), 
-            ('g4', {'type': 'Goal', 'D': False, 'R': 1}), ('g5', {'type': 'Goal', 'D': False, 'R': 1}),
+            ('g1', {'type': 'Goal', 'D': False, 'R': 0}), ('g2', {'type': 'Goal', 'D': False, 'R': 0}), ('g3', {'type': 'Goal', 'D': False, 'R': 0}), 
+            ('g4', {'type': 'Goal', 'D': False, 'R': 0}), ('g5', {'type': 'Goal', 'D': False, 'R': 0}),
             
             ('a1',  {'type': 'Attack step', 'D': False, 'p': 0.7, 'C': 50}), ('a2',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 60}),
             ('a3',  {'type': 'Attack step', 'D': False, 'p': 0.5, 'C': 60}), ('a4',  {'type': 'Attack step', 'D': False, 'p': 0.1, 'C': 120}),
@@ -195,8 +185,7 @@ class CPSsenv():
         for node in nodes:
             if node[1]['type'] == 'Attack step':
                 node[1]['C'] /= 200
-            elif node[1]['type'] == 'Goal':
-                node[1]['R'] *= 1
+        
 
         network.add_nodes_from(nodes)
 
@@ -210,22 +199,29 @@ class CPSsenv():
 
         network.add_edges_from(edges)
 
-        return network
+        self.nw = network
 
 
-    def set_params(self, network, params):
+    def set_params(self, params):
         if 'Probs' in params.keys():
             for att,prob in params['Probs'].items():
-                network.nodes()[att] = prob
+                self.nw.nodes()[att]['p'] = prob
+
+        if 'Rewards' in params.keys():
+            for goal in params['Rewards']:
+                self.nw.nodes()[goal]['R'] = 1
+                if len(params['Rewards']) == 1:
+                    self.GOAL = goal
+                # TODO IMPLEMENT LIST OF DESIRED GOALS WHEN 
+        # TODO IMPLEMENT ELSE: AT LEAST ONE GOAL HAS REWARD
         
-        return network
+        
 
-
-    def init_network(self, init_state):
+    def init_network(self, init_type, *args):
 
         # Environment's state format
-        if type(init_state) == list:
-            
+        if init_type == 'env state':
+            init_state = args[0]
             for access in init_state[0].keys():
                 self.nw.nodes()[access]['D'] = bool(init_state[0][access])
             for know in init_state[1].keys():
@@ -235,6 +231,11 @@ class CPSsenv():
             for goal in init_state[3].keys():
                 self.nw.nodes()[goal]['D'] = bool(init_state[3][goal])
 
+        elif init_type == 'active list':
+            active = args[0]
+            for node in active:
+                self.nw.nodes()[node] = True
+            
 
         # else:
         #     if 'Access' in init.keys():
