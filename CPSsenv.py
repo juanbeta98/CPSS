@@ -62,7 +62,7 @@ class CPSsenv():
         reward = payoff - cost
         self.state = self.assemble_state()
 
-        done, _ = self.check_termination()
+        reward, done, _ = self.check_termination(reward)
 
         self.available_actions = self.get_available_actions()
         self.t += 1
@@ -91,20 +91,22 @@ class CPSsenv():
                     node_type = self.nw.nodes()[node]['type']
                     if node_type == 'Access': 
                         self.acc[node] = 1
-                    elif node_type == 'Knowledge':
-                        self.kno[node] = 1
+                        self.collection.append(node)
+                    # elif node_type == 'Knowledge':
+                    #     self.kno[node] = 1
                     elif node_type == 'Goal' and self.goa[node] == 0:
                         payoff += self.nw.nodes()[node]['R']
                         self.goa[node] = 1
+                        self.collection.append(node)
 
-                    self.collection.append(node)
+                    
 
             self.act[action] = 1       
         
         return payoff
     
 
-    def check_termination(self): 
+    def check_termination(self, reward): 
         _ = {'Success': False}
         done = False
 
@@ -120,7 +122,11 @@ class CPSsenv():
         if self.t > self.max_steps:
             done = True
 
-        return done, _
+        # Penalization
+        if done == True and not _['Success']:
+            reward += -4
+        
+        return reward, done, _
 
 
     def get_available_actions(self):

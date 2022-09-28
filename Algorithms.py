@@ -21,10 +21,10 @@ class CPSsalgorithms():
         # print('State: ', state)
         if random() < epsilon or tuple(sttate) not in list(q_table.keys()):
             action = choice(available_actions)
-        elif {i:j for i,j in q_table[tuple(sttate)].items() if j in available_actions} == {}:
+        elif {i:j for i,j in list(q_table[tuple(sttate)].items()) if i in available_actions} == {}:
             action = choice(available_actions)
         else:
-            real_dict = {i:j for i,j in q_table[tuple(sttate)].items() if j in available_actions}
+            real_dict = {i:j for i,j in list(q_table[tuple(sttate)].items()) if i in available_actions}
             action = max(real_dict, key = real_dict.get)
 
         return action
@@ -39,13 +39,13 @@ class CPSsalgorithms():
             q_table[tuple(sttate)] = {}
             q_table[tuple(sttate)][action] = reward
         
-        elif new_sttate not in list(q_table.keys()) or action not in q_table[tuple(sttate)].keys():
+        elif tuple(new_sttate) not in list(q_table.keys()) or action not in list(q_table[tuple(sttate)].keys()):
                     
             q_table[tuple(sttate)][action] = reward
             
         else:
             
-            max_future_q = max(list(q_table[new_sttate].values()))    # Minimum value of the arriving state
+            max_future_q = max(list(q_table[tuple(new_sttate)].values()))    # Minimum value of the arriving state
             current_q = q_table[tuple(sttate)][action]                   # Value of current state and action
         
             new_q = (1 - alpha) * current_q + alpha * (reward + gamma * max_future_q)               
