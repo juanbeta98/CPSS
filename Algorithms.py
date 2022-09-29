@@ -65,7 +65,6 @@ class CPSsalgorithms():
             v_hat[tuple(ii)] = 0
         # v_hat = {tuple(ii):0 for ii in States}
 
-        print(v_hat)
         policy = {tuple(state):'' for state in States}
 
         while True:
@@ -137,6 +136,9 @@ class CPSsalgorithms():
                         
                     if not done and st_prime not in states:
                         states.append(self.translate_state(st_prime))
+                
+                states = set(tuple(i) for i in states)
+                states = list(list(i) for i in states)
         
         else:
             inter_list = []

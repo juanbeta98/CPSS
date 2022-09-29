@@ -11,12 +11,12 @@ from copy import copy, deepcopy
 ENVIRONMENT PARAMETERS
 '''
 network = 'SCADA'
-T_max = 6
+T_max = 5
 termination = 'one goal'
-nw_params = {'Rewards': ['g5']}
+nw_params = {'Rewards': ['g2']}
 rd_seed = 0
 init_type = 'active list'
-init_params = ['r1', 'k1', 'k4', 's1', 's3']
+init_params = ['r6', 'k4', 's1', 's3']
 
 '''
 Creating environment object
@@ -29,13 +29,11 @@ Policy object
 '''
 solver = CPSsalgorithms(env, init_params = init_params)
 
-'''
-
 
 # Q-Learning parameters
 
 replicas = 5
-episodes = 20000
+episodes = 15000
 Episodes = range(episodes) 
 
 alpha = 0.05                                     # How fast does the agent learn
@@ -91,14 +89,14 @@ for episode in Episodes:
 
 # Training stats
        
-print('\n############## Training done ##############\n')
+print('\n############################   Q-Learning Training   ############################\n')
 print(f'Training time:                 {round(time() - start,2)} s')
 print(f'Success prob on last 10% ep:   {round(sum(successes[int(0.9*episodes):])/(0.1*episodes),2)}')
 
 
 # Mobiled-averaged rewards for plotting 
 
-avg_episodes = 250
+avg_episodes = 500
 average_rewards = []
 average_probs = []
 for episode in Episodes:
@@ -182,10 +180,6 @@ for episode in range(50):
 
         state = new_state
 
-    if _['Success'] and not printt:
-        for i in summary:
-            print(i)
-        printt = True
     #     print('Successful testing episode')
     # else:
     #     print('Unsuccessful testing episode')
@@ -195,13 +189,13 @@ for episode in range(50):
 
 # Testing stats
  
-print('\n############## Testing done ##############\n')
+print('\n############################   Q-Learning Testing   ############################\n')
 print(f'Success rate: {round(sum(sss)/50,2)}')
 print(f'Avg reward:   {round(sum(episodes_rewards)/50,2)}')
 
 state = [{'r1': 1, 'r2': 0, 'r3': 0, 'r4': 0, 'r5': 0, 'r6': 0, 'r7': 0, 'r8': 0}, {'k1': 1, 'k2': 0, 'k3': 0, 'k4': 1}, {'s1': 1, 's2': 0, 's3': 1}, {'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0, 'g5': 0}]
-print(q_table[tuple(solver.translate_state(state))])
-'''
+#print(q_table[tuple(solver.translate_state(state))])
+
 
 
 '''
@@ -210,11 +204,51 @@ Value iteration
 gamma = 0.9
 theta = 0.00009
 state, available_actions = env.reset(init_type = init_type, init_params = init_params)
+start = time()
 States = solver.generate_states(env, loops = 50000, load = False)
-
-
 V_hat, policy = solver.Value_Iteration(env, States, gamma, theta)
-for state in policy.keys():
-    print(f'On state {solver.ret_state(state)} -> {policy[state]}')
+
+print('\n############################   Value Iteration Computing   ############################\n')
+print(f'Computing time:                 {round(time() - start,2)} s')
+
+# for state in policy.keys():
+#     print(f'On state {solver.ret_state(state)} -> {policy[state]}')
+
+
+# Value Iteration Testing
+
+episodes_rewards = [] 
+sss = []
+
+for episode in range(50):
+    state, available_actions = env.reset(init_type = init_type, init_params = init_params, rd_seed = rd_seed * 750)
+    done = False
+    episode_reward = 0
+    summary = []
+
+    while not done:
+
+        old_state = deepcopy(state)
+        old_sttate = solver.translate_state(old_state)
+        action = policy[tuple(old_sttate)]
+
+        new_state, available_actions, reward, done, _ = env.step(action)
+        episode_reward += reward
+
+        summary.append((old_state[0], old_state[3], action))
+
+        state = new_state
+
+    sss.append(int(_['Success']))
+    episodes_rewards.append(episode_reward)
+
+
+# Testing stats
+print('\n############################   Value Iteration Test   ############################\n')
+print(f'Success rate: {round(sum(sss)/50,2)}')
+print(f'Avg reward:   {round(sum(episodes_rewards)/50,2)}')
+
+state = [{'r1': 1, 'r2': 0, 'r3': 0, 'r4': 0, 'r5': 0, 'r6': 0, 'r7': 0, 'r8': 0}, {'k1': 1, 'k2': 0, 'k3': 0, 'k4': 1}, {'s1': 1, 's2': 0, 's3': 1}, {'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0, 'g5': 0}]
+
 
 
