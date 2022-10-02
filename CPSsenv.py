@@ -6,6 +6,7 @@ Authors:
 
 import networkx as nx
 from numpy.random import random, seed
+import matplotlib.pyplot as plt
 
 class CPSsenv():
 
@@ -161,65 +162,98 @@ class CPSsenv():
         return flag
 
 
-    def render(self):
+    def render(self, attacks = False):
 
-        coordinates = {}
+        coordinates = {
+        'r1': (4.5,9.5),
+        'r2': (4,5.5),
+        'r3': (4.8,5.3),
+        'r4': (5.5,5.5),
+        'r5': (3,4.5),
+        'r6': (0.65,8),
+        'r7': (0.65,5.5),
+        'r8': (1,3),
+        'k1': (2.25,9),
+        'k2': (1.5,9),
+        'k3': (2.1,6.7),
+        'k4': (1.35,5.5),
+        's1': (3,9),
+        's2': (5.5,9.5),
+        's3': (2,4.25),
+        'g1': (3,1.75),
+        'g2': (4.5,1.5),
+        'g3': (5,2),
+        'g4': (2,0.5),
+        'g5': (1,0.5),
+        'a1': (2.75,7.75),
+        'a2': (3.5,7.75),
+        'a3': (4.25,7.75),
+        'a4': (5,7.75),
+        'a5': (5.75,7.75),
+        'a6': (3,5.75),
+        'a7': (3,3),
+        'a8': (4,2.5),
+        'a9': (5,3.5),
+        'a10': (3,0.5),
+        'a11': (4,0.5),
+        'a12': (2,7.75),
+        'a13': (0.65,6.75),
+        'a14': (1.9,5.5),
+        'a15': (1,4.25),
+        'a16': (2,3),
+        'a17': (1,1.75),
+        'a18': (2,1.75)
+        }
 
-        coordinates['r1'] = ()
-        coordinates['r2'] = ()
-        coordinates['r3'] = ()
-        coordinates['r4'] = ()
-        coordinates['r5'] = ()
-        coordinates['r6'] = ()
-        coordinates['r7'] = ()
-        coordinates['r8'] = ()
-
-        coordinates['k1'] = ()
-        coordinates['k2'] = ()
-        coordinates['k3'] = ()
-        coordinates['k4'] = ()
-
-        coordinates['s1'] = ()
-        coordinates['s2'] = ()
-        coordinates['s3'] = ()
-
-        coordinates['g1'] = ()
-        coordinates['g2'] = ()
-        coordinates['g3'] = ()
-        coordinates['g4'] = ()
-        coordinates['g5'] = ()
-
-        coordinates['a1'] = ()
-        coordinates['a2'] = ()
-        coordinates['a3'] = ()
-        coordinates['a4'] = ()
-        coordinates['a5'] = ()
-        coordinates['a6'] = ()
-        coordinates['a7'] = ()
-        coordinates['a8'] = ()
-        coordinates['a9'] = ()
-        coordinates['a10'] = ()
-        coordinates['a11'] = ()
-        coordinates['a12'] = ()
-        coordinates['a13'] = ()
-        coordinates['a14'] = ()
-        coordinates['a15'] = ()
-
-        colors = []
+        node_colors = []
+        sizes = []
         for node in self.nw.nodes():
-            thy_type = node['type']
-            if thy_type == 'Access':
-                colors.append('red')
+            thy_type = self.nw.nodes()[node]['type']
+            if self.nw.nodes()[node]['D'] == True:
+                node_colors.append('purple')
+                sizes.append(350)
+            elif self.GOAL == node:
+                node_colors.append('gold')
+                sizes.append(500)
+            elif thy_type == 'Access':
+                node_colors.append('tab:red')
+                sizes.append(300)
             elif thy_type == 'Knowledge':
-                colors.append('green')
+                node_colors.append('tab:green')
+                sizes.append(250)
             elif thy_type == 'Skill':
-                colors.append('blue')
+                node_colors.append('tab:blue')
+                sizes.append(250)
             elif thy_type == 'Goal':
-                colors.append('yellow')
+                node_colors.append('yellow')
+                sizes.append(300)
             elif thy_type == 'Attack step':
-                colors.append('grey')
+                node_colors.append('tab:grey')
+                sizes.append(300)
+        
+        edge_colors = 'black'
+        if attacks != False:
+            edge_colors = []
+            for edge in self.nw.edges():
+                if edge[0] in attacks or edge[1] in attacks:
+                    edge_colors.append('red')
+                else:
+                    edge_colors.append('black')
 
-        nx.draw(self.nw, pos = coordinates, arrows = True, node_color = colors)
+
+        nx.draw(self.nw, 
+                pos = coordinates, 
+                arrows = True, 
+                with_labels = True, 
+                node_color = node_colors, 
+                node_size = sizes,
+                edge_color = edge_colors,
+                edgecolors = 'black',
+                font_size = 9,
+                alpha = 0.85,
+                label = 'SCADA System')
+        
+        plt.show()
 
 
     def gen_SCADA_nw(self):
@@ -263,7 +297,7 @@ class CPSsenv():
                 ('s2','a3'), ('s2','a4'), ('s2','a5'), ('s3','a16'),('s3','a7'), ('a1','r2'), ('a2','r2'), ('a3','r2'),  ('a4','r3'),  ('a5','r4'),
                 ('r2','a4'), ('r2','a5'), ('r2','a6'), ('r2','a9'), ('r3','a3'), ('r3','a5'), ('r3','a8'), ('r3','a9'),
                 
-                ('r6','a12'),('r6','a14'),('r3','a13'),('r7','a15'),('r8','a16'), ('r8','a17'),('r4','a3'), ('r4','a4'), ('r4','a9'), ('a6','r5'),
+                ('r6','a12'),('r6','a14'),('r6','a13'),('r7','a15'),('r8','a16'), ('r8','a17'),('r4','a3'), ('r4','a4'), ('r4','a9'), ('a6','r5'),
                 ('r5','a7'), ('r5','a8'), ('r5','a9'), ('a7','g1'), ('a8','g2'),  ('a9','g3'), ('g1','a10'),('g1','a11'),('g1','a18'),
                 ('a10','g4'),('a11','g2'),('a12','r2'),('a13','r7'),('a14','r5'), ('a15','r8'),('a16','g1'),('a17','g5'),('a18','g5'),]
 
@@ -302,8 +336,11 @@ class CPSsenv():
 
         elif init_type == 'active list':
             active = args[0]
-            for node in active:
-                self.nw.nodes()[node]['D'] = True
+            for node in self.nw.nodes():
+                if node in active:
+                    self.nw.nodes()[node]['D'] = True
+                else:
+                    self.nw.nodes()[node]['D'] = False
             
 
         # else:

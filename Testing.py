@@ -11,7 +11,7 @@ from copy import copy, deepcopy
 ENVIRONMENT PARAMETERS
 '''
 network = 'SCADA'
-T_max = 5
+T_max = 10
 termination = 'one goal'
 nw_params = {'Rewards': ['g2']}
 rd_seed = 0
@@ -25,13 +25,20 @@ env = CPSsenv(network = network, T_max = T_max, termination = termination, nw_pa
 
 
 '''
-Policy object
+Creating policy object
 '''
 solver = CPSsalgorithms(env, init_params = init_params)
 
 
-# Q-Learning parameters
+'''
+Ploting network
+'''
+state, available_actions = env.reset(init_type = init_type, init_params = init_params, rd_seed = rd_seed) 
 
+
+'''
+Q-Learning parameters
+'''
 replicas = 5
 episodes = 15000
 Episodes = range(episodes) 
@@ -45,8 +52,9 @@ end_e_decaying = round(episodes * 0.7)          # Last episode at which decay ep
 epsilon_decay_value = (epsilon - 0.03) / (end_e_decaying - start_e_decaying)
 
 
+'''
 # Q-Learning Training
-
+'''
 start = time()
 q_table = {} 
 episodes_rewards, successes, num_states = [], [], []
@@ -156,9 +164,9 @@ if plots:
     plt.show()
 
 
-
-# Q-Learning testing
-
+'''
+Q-Learning testing
+'''
 episodes_rewards = [] 
 sss = []
 printt = False
@@ -180,9 +188,6 @@ for episode in range(50):
 
         state = new_state
 
-    #     print('Successful testing episode')
-    # else:
-    #     print('Unsuccessful testing episode')
     sss.append(int(_['Success']))
     episodes_rewards.append(episode_reward)
 
@@ -192,10 +197,6 @@ for episode in range(50):
 print('\n############################   Q-Learning Testing   ############################\n')
 print(f'Success rate: {round(sum(sss)/50,2)}')
 print(f'Avg reward:   {round(sum(episodes_rewards)/50,2)}')
-
-state = [{'r1': 1, 'r2': 0, 'r3': 0, 'r4': 0, 'r5': 0, 'r6': 0, 'r7': 0, 'r8': 0}, {'k1': 1, 'k2': 0, 'k3': 0, 'k4': 1}, {'s1': 1, 's2': 0, 's3': 1}, {'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0, 'g5': 0}]
-#print(q_table[tuple(solver.translate_state(state))])
-
 
 
 '''
