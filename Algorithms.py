@@ -81,13 +81,14 @@ class CPSsalgorithms():
                 old_val = deepcopy(v_hat[tuple(sttate)])
 
                 mejor_accion = ''
-                mejor_valor = -2
-                valor = 0
+                mejor_valor = -3
 
                 if available_actions != []:
+                    valor = 0
+
                     for action in available_actions:
 
-                        st, av_act = env.reset(init_type = 'env state', init_params = state) 
+                        st, av_act = env.reset(init_type = 'env state', init_params = state)
                         s_prima, av_act, reward, done, _ = env.step(action, stochastic = False)
                         s_primaa = self.translate_state(s_prima)
                     
@@ -95,13 +96,14 @@ class CPSsalgorithms():
                             valor = env.nw.nodes()[action]['p'] * ((reward) + gamma * v_hat[tuple(s_primaa)]) + \
                                 (1-env.nw.nodes()[action]['p']) * (-env.nw.nodes()[action]['C'] + gamma * v_hat[tuple(s_primaa)])
 
-                        elif s_primaa in States and done:
+                        elif done:
                             valor = env.nw.nodes()[action]['p'] * (reward) + \
-                                (1-env.nw.nodes()[action]['p']) * env.nw.nodes()[action]['C']
+                                (1-env.nw.nodes()[action]['p']) * (-env.nw.nodes()[action]['C'])
 
                         else:
                             States.append(s_primaa)
-                            valor = 0
+                            valor = env.nw.nodes()[action]['p'] * (reward) + \
+                                (1-env.nw.nodes()[action]['p']) * (-env.nw.nodes()[action]['C'])
                             v_hat[tuple(s_primaa)] = valor
 
                         if valor > mejor_valor:
