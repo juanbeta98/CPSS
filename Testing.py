@@ -249,6 +249,3 @@ print(f'Success rate: {round(sum(sss)/50,2)}')
 print(f'Avg reward:   {round(sum(episodes_rewards)/50,2)}')
 
 state = [{'r1': 1, 'r2': 0, 'r3': 0, 'r4': 0, 'r5': 0, 'r6': 0, 'r7': 0, 'r8': 0}, {'k1': 1, 'k2': 0, 'k3': 0, 'k4': 1}, {'s1': 1, 's2': 0, 's3': 1}, {'g1': 0, 'g2': 0, 'g3': 0, 'g4': 0, 'g5': 0}]
-
-
-

@@ -9,6 +9,7 @@ from numpy.random import random, seed
 
 class CPSsenv():
 
+
     def __init__(self, network, T_max, termination = 'One Goal', nw_params = None) -> None:
         self.termination = termination
 
@@ -133,6 +134,7 @@ class CPSsenv():
         available_actions = [x for x in self.Attack_steps if self.eval_predecessors(x) and self.act[x] == 0]
         return available_actions
     
+
     # TODO Generalization
     def eval_predecessors(self, action):
         flag = False
@@ -159,26 +161,65 @@ class CPSsenv():
         return flag
 
 
-        # if action ==   'a1'  and ('r1' in self.collection and 'k1' in self.collection):      flag = True
-        # elif action == 'a2'  and ('r1' in self.collection and 's1' in self.collection):      flag = True
-        # elif action == 'a3'  and ('s2' in self.collection and any(node in self.collection for node in ['r1', 'r3', 'r4'])): flag = True
-        # elif action == 'a4'  and ('s2' in self.collection and any(node in self.collection for node in ['r1', 'r2', 'r4'])): flag = True
-        # elif action == 'a5'  and ('s2' in self.collection and any(node in self.collection for node in ['r1', 'r2', 'r3'])): flag = True
-        # elif action == 'a6'  and ('s2' in self.collection and 'r2' in self.collection):     flag = True
-        # elif action == 'a7'  and ('s3' in self.collection and 'r5' in self.collection):     flag = True
-        # elif action == 'a8'  and ('s3' in self.collection and 'r5' in self.collection):     flag = True
-        # elif action == 'a9'  and (any(node in self.collection for node in ['r2','r3','r4','r5'])):           flag = True
-        # elif action == 'a10' and ('g1' in self.collection):                                 flag = True
-        # elif action == 'a11' and ('g1' in self.collection):                                 flag = True
-        # elif action == 'a12' and ('k2' in self.collection and 'r6' in self.collection):     flag = True
-        # elif action == 'a13' and ('r6' in self.collection):                                 flag = True
-        # elif action == 'a14' and ('k3' in self.collection and 'r6' in self.collection):     flag = True
-        # elif action == 'a15' and ('k4' in self.collection and 'r7' in self.collection):     flag = True
-        # elif action == 'a16' and ('s3' in self.collection and 'r8' in self.collection):     flag = True
-        # elif action == 'a17' and ('r8' in self.collection):                                 flag = True 
-        # elif action == 'a18' and ('g1' in self.collection):                                 flag = True
+    def render(self):
 
-        # return flag
+        coordinates = {}
+
+        coordinates['r1'] = ()
+        coordinates['r2'] = ()
+        coordinates['r3'] = ()
+        coordinates['r4'] = ()
+        coordinates['r5'] = ()
+        coordinates['r6'] = ()
+        coordinates['r7'] = ()
+        coordinates['r8'] = ()
+
+        coordinates['k1'] = ()
+        coordinates['k2'] = ()
+        coordinates['k3'] = ()
+        coordinates['k4'] = ()
+
+        coordinates['s1'] = ()
+        coordinates['s2'] = ()
+        coordinates['s3'] = ()
+
+        coordinates['g1'] = ()
+        coordinates['g2'] = ()
+        coordinates['g3'] = ()
+        coordinates['g4'] = ()
+        coordinates['g5'] = ()
+
+        coordinates['a1'] = ()
+        coordinates['a2'] = ()
+        coordinates['a3'] = ()
+        coordinates['a4'] = ()
+        coordinates['a5'] = ()
+        coordinates['a6'] = ()
+        coordinates['a7'] = ()
+        coordinates['a8'] = ()
+        coordinates['a9'] = ()
+        coordinates['a10'] = ()
+        coordinates['a11'] = ()
+        coordinates['a12'] = ()
+        coordinates['a13'] = ()
+        coordinates['a14'] = ()
+        coordinates['a15'] = ()
+
+        colors = []
+        for node in self.nw.nodes():
+            thy_type = node['type']
+            if thy_type == 'Access':
+                colors.append('red')
+            elif thy_type == 'Knowledge':
+                colors.append('green')
+            elif thy_type == 'Skill':
+                colors.append('blue')
+            elif thy_type == 'Goal':
+                colors.append('yellow')
+            elif thy_type == 'Attack step':
+                colors.append('grey')
+
+        nx.draw(self.nw, pos = coordinates, arrows = True, node_color = colors)
 
 
     def gen_SCADA_nw(self):

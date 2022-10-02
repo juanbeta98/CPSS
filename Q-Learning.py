@@ -227,7 +227,6 @@ plt.show()
 '''
 Q-Learning training
 '''
-
 q_table = {}
 episodes_rewards = []
 succeses = []
