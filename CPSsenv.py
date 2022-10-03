@@ -7,6 +7,7 @@ Authors:
 import networkx as nx
 from numpy.random import random, seed
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 class CPSsenv():
 
@@ -162,7 +163,7 @@ class CPSsenv():
         return flag
 
 
-    def render(self, attacks = False):
+    def render(self, attacks = False, save: bool = False):
 
         coordinates = {
         'r1': (4.5,9.5),
@@ -240,6 +241,25 @@ class CPSsenv():
                 else:
                     edge_colors.append('black')
 
+        legend_elements = [  Line2D([0], [0], marker='o', color='purple', label='Init.state', lw=0,
+                          markerfacecolor='purple', markersize=4),
+                     Line2D([0], [0], marker='o', color='gold', label='Active goal', lw=0,
+                          markerfacecolor='gold', markersize=6),
+                     Line2D([0], [0], marker='o', color='tab:red', label='Access', lw=0,
+                          markerfacecolor='tab:red', markersize=4),
+                     Line2D([0], [0], marker='o', color='tab:blue', label='Knowledge', lw=0,
+                          markerfacecolor='tab:blue', markersize=4),
+                     Line2D([0], [0], marker='o', color='tab:green', label='Skill', lw=0,
+                          markerfacecolor='tab:green', markersize=4),
+                     Line2D([0], [0], marker='o', color='yellow', label='Goal', lw=0,
+                          markerfacecolor='yellow', markersize=4),
+                     Line2D([0], [0], marker='o', color='tab:grey', label='Attack', lw=0,
+                          markerfacecolor='tab:grey', markersize=4),
+                     Line2D([0], [0], linestyle='-',color='red', label='Attack path', lw=1,
+                          markersize=1),
+                          ]
+        ax = plt.gca()
+        ax.legend(handles=legend_elements, loc='lower right', fontsize=6)
 
         nx.draw(self.nw, 
                 pos = coordinates, 
@@ -251,9 +271,15 @@ class CPSsenv():
                 edgecolors = 'black',
                 font_size = 9,
                 alpha = 0.85,
-                label = 'SCADA System')
+                label = 'SCADA System',
+                ax = ax)
         
+        if save:
+            plt.savefig(f'Experiment_{self.GOAL}.png', dpi = 600)
+
         plt.show()
+
+
 
 
     def gen_SCADA_nw(self):
