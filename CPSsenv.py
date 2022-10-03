@@ -163,7 +163,7 @@ class CPSsenv():
         return flag
 
 
-    def render(self, attacks = False, save: bool = False):
+    def render(self, attacks = False, file_name = '', save: bool = False):
 
         coordinates = {
         'r1': (4.5,9.5),
@@ -275,7 +275,7 @@ class CPSsenv():
                 ax = ax)
         
         if save:
-            plt.savefig(f'Experiment_{self.GOAL}.png', dpi = 600)
+            plt.savefig(file_name, dpi = 600)
 
         plt.show()
 
