@@ -91,14 +91,14 @@ class CPSsalgorithms():
                         st, av_act = env.reset(init_type = 'env state', init_params = state)
                         s_prima, av_act, reward, done, _ = env.step(action, stochastic = False)
                         s_primaa = self.translate_state(s_prima)
-                    
-                        if s_primaa in States and not done:
-                            valor = env.nw.nodes()[action]['p'] * ((reward) + gamma * v_hat[tuple(s_primaa)]) + \
-                                (1-env.nw.nodes()[action]['p']) * (-env.nw.nodes()[action]['C'] + gamma * v_hat[tuple(s_primaa)])
 
-                        elif done:
+                        if done:
                             valor = env.nw.nodes()[action]['p'] * (reward) + \
                                 (1-env.nw.nodes()[action]['p']) * (-env.nw.nodes()[action]['C'])
+                    
+                        elif s_primaa in States and not done:
+                            valor = env.nw.nodes()[action]['p'] * ((reward) + gamma * v_hat[tuple(s_primaa)]) + \
+                                (1-env.nw.nodes()[action]['p']) * (-env.nw.nodes()[action]['C'] + gamma * v_hat[tuple(s_primaa)])
 
                         else:
                             States.append(s_primaa)
@@ -124,7 +124,6 @@ class CPSsalgorithms():
 
 
     def generate_states(self, env, loops = 50000, load = False):
-  
         states = []
         if load == False:
             for iter in range(loops):
@@ -139,8 +138,9 @@ class CPSsalgorithms():
                     if not done and st_prime not in states:
                         states.append(self.translate_state(st_prime))
                 
+                statees = deepcopy(states)
                 states = set(tuple(i) for i in states)
-                states = list(list(i) for i in states)
+                states = [list(i) for i in states]
         
         else:
             inter_list = []
@@ -176,6 +176,7 @@ class CPSsalgorithms():
             ii += 1
         for i in range(1,6):
             dic4['g'+str(i)] = state[ii]
+            ii += 1
         
         return [dic1, dic2, dic3, dic4]
         

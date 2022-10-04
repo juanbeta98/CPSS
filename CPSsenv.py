@@ -31,7 +31,7 @@ class CPSsenv():
 
 
     def reset(self, init_type = None, init_params = None, rd_seed = 0):
-        random(rd_seed)
+        self.rd_seed = rd_seed
         self.t = 0
 
         if init_params != None:
@@ -65,10 +65,11 @@ class CPSsenv():
         reward = payoff - cost
         self.state = self.assemble_state()
 
+        self.t += 1
         reward, done, _ = self.check_termination(reward)
 
         self.available_actions = self.get_available_actions()
-        self.t += 1
+        
         
         return self.state, self.available_actions, reward, done, _
     
@@ -79,6 +80,7 @@ class CPSsenv():
 
 
     def gen_W(self, action):
+        seed(self.rd_seed + self.t)
         W = False
         if self.nw.nodes()[action]['p'] > random():
             W = True
@@ -92,17 +94,13 @@ class CPSsenv():
                 node = edge[1]
                 if node not in self.collection:
                     node_type = self.nw.nodes()[node]['type']
-                    if node_type == 'Access': 
+                    if node_type == 'Access' and self.acc[node] == 0: 
                         self.acc[node] = 1
                         self.collection.append(node)
-                    # elif node_type == 'Knowledge':
-                    #     self.kno[node] = 1
                     elif node_type == 'Goal' and self.goa[node] == 0:
                         payoff += self.nw.nodes()[node]['R']
                         self.goa[node] = 1
                         self.collection.append(node)
-
-                    
 
             self.act[action] = 1       
         
@@ -122,9 +120,8 @@ class CPSsenv():
                 done = True;   _['Success'] = True
 
         # Number of time-steps
-        if self.t > self.max_steps:
+        if self.t >= self.max_steps:
             done = True
-
         # Penalization
         if done == True and not _['Success']:
             reward += -4
@@ -280,8 +277,6 @@ class CPSsenv():
         plt.show()
 
 
-
-
     def gen_SCADA_nw(self):
         '''
         SCADA System example
@@ -305,7 +300,7 @@ class CPSsenv():
             ('a3',  {'type': 'Attack step', 'D': False, 'p': 0.5, 'C': 60}), ('a4',  {'type': 'Attack step', 'D': False, 'p': 0.1, 'C': 120}),
             ('a5',  {'type': 'Attack step', 'D': False, 'p': 0.3, 'C': 90}), ('a6',  {'type': 'Attack step', 'D': False, 'p': 0.6, 'C': 30}),
             ('a7',  {'type': 'Attack step', 'D': False, 'p': 0.75,'C': 70}), ('a8',  {'type': 'Attack step', 'D': False, 'p': 0.8, 'C': 20}),
-            ('a9',  {'type': 'Attack step', 'D': False, 'p': 0.95,'C': 10}), ('a10', {'type': 'Attack step', 'D': False, 'p': 0.5, 'C': 90}),
+            ('a9',  {'type': 'Attack step', 'D': False, 'p': 0.75,'C': 10}), ('a10', {'type': 'Attack step', 'D': False, 'p': 0.5, 'C': 90}),
             ('a11', {'type': 'Attack step', 'D': False, 'p': 0.85,'C': 20}), ('a12', {'type': 'Attack step', 'D': False, 'p': 1,   'C': 1}),
             ('a13', {'type': 'Attack step', 'D': False, 'p': 0.7, 'C': 10}), ('a14', {'type': 'Attack step', 'D': False, 'p': 1,   'C': 1}),    
             ('a15', {'type': 'Attack step', 'D': False, 'p': 1,   'C': 1}),  ('a16', {'type': 'Attack step', 'D': False, 'p': 0.65,'C': 90}),
